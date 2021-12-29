@@ -1,6 +1,7 @@
 #pragma once
-#include <sstream>
+//#include <sstream>
 #include <string>
+#include <queue>
 #include <exception>
 
 using std::string;
@@ -17,8 +18,7 @@ private:
 
         node(const std::string &data, node *child = nullptr, node *brother = nullptr)
             : data(data), child(child), brother(brother)
-        {
-        }
+        {}
     } *root{};
 
     node *copy(node *r)
@@ -34,6 +34,85 @@ private:
             clear(r->brother);
             delete r;
         }
+    }
+
+    std::vector<std::string> getLine(const std::string &s)
+    {
+        std::vector<std::string> result;
+        std::string line;
+        for (size_t i = 0; i < s.size(); i++)
+        {
+            if(s[i] != '\n')
+                line.push_back(s[i]);
+            else 
+            {
+                result.push_back(line);
+                line = "";
+            }
+        }
+
+        if(line != "")
+            result.push_back(line);
+        return result;
+    }
+
+    bool validateName(const std::string &name)
+    {
+        if(name == "" || name.find('-') != string::npos || allCharsSpaces(name)) 
+            return false;
+
+        for (size_t i = 0; i < name.length(); i++) //if there is space in tha name
+            if(name[i] != ' ')
+            {
+                string afterSpace = name.substr(i);
+                    for (size_t j = afterSpace.size() - 1; j >= 0; j--)
+                    {
+                        if(afterSpace[j] == ' ')
+                            afterSpace.pop_back();
+                        else if(afterSpace.find(' ') != string::npos)
+                        {
+                            return false;
+                            std::cout<<"majka ti deiba\n";
+                        }
+                        else return true;
+                    }
+            }
+
+        return true;
+    }
+
+    bool allCharsSpaces(const std::string &s) const
+    {
+        int n = s.length();
+        for (int i = 0; i < n; i++)
+            if (s[i] != ' ')
+                return false;
+ 
+        return true;
+    }
+
+    bool checkInputData(const std::string &s)
+    {
+        if(s == "")
+            return true;
+
+        std::vector<std::string> lines = getLine(s);
+        if(lines.empty())
+            return false;
+        for (auto &&l : lines)
+        {
+            if (l.find('-') != string::npos)
+            {
+                size_t pos = l.find('-');
+                string fatherName, childName;
+                fatherName = l.substr(0, pos);
+                childName = l.substr(pos + 1);
+                if(!validateName(fatherName) || !validateName(childName))
+                    return false;
+            }
+            else return false;
+        }
+        return true;
     }
 
     size_t brothersCount(node *n) const
@@ -57,19 +136,11 @@ private:
     node *getNode(node *curr, const std::string &key) const
     {
         if (!curr)
-        {
-            //std::cout<<"tuka li ";
-            //std::cout<<key<<std::endl;
             return nullptr;
-        }
-        if (curr->data == key)
-        {
-            //std::cout<<curr->data<<std::endl;
-            return curr;
-        }
 
-        //std::cout<<"za: "<<curr->data<<std::endl;
-         
+        if (curr->data == key)
+            return curr;
+
         auto temp = getNode(curr->brother, key);
         return temp ? temp : getNode(curr->child, key);
     }
@@ -88,14 +159,12 @@ private:
     string print(node *n) const
     {
         string result;
-        //std::cout<<"printCalled\n";
         if(!n)
             return "";
 
         auto child = n->child;
         while(child)
         {
-            //std::cout<<"za "<<n->data<<std::endl;
             result += n->data;
             result.push_back('-');
             result += child->data;
@@ -127,6 +196,112 @@ private:
         else return num_overloaded(level, r->brother) + num_overloaded(level, r->child);
     }
 
+    std::vector<node*> getAll(node *r) const
+    {
+        std::vector<node*> result;
+        if(r->child)
+        {
+            result = getAll(r->child);
+        }
+        result.push_back(r);
+        if(r->brother)
+        {
+            auto getAllBrother = getAll(r->brother);
+            result.insert(result.end(), getAllBrother.begin(), getAllBrother.end());
+        }
+        return result;
+    }
+
+    std::vector<node*> getFathers(node *r, const Hierarchy &h) const
+    {
+        std::vector<node*> result;
+        while(true)
+        {
+            r = getFather(h.root, h.root, r->data);
+            if(r->data == "Uspeshnia" || !r)
+                break;
+            result.push_back(r);
+        }
+        return result;
+    }
+
+    bool checkJoin(const Hierarchy &right) const
+    {
+        std::vector<node*> rightNodes = getAll(right.root->child);
+        for (auto &&n : rightNodes)
+        {
+            auto nodeInLeft = getNode(root, n->data);
+            if(nodeInLeft)
+            {
+                std::vector<node*> managers = getFathers(n, right);
+                for (auto &&manager : managers)
+                {
+                    if(find(nodeInLeft->child, manager->data))
+                        return false;
+                }
+                
+                managers = getFathers(nodeInLeft, *this);
+                for (auto &&manager : managers)
+                {
+                    if(find(n->child, manager->data))
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    const std::vector<node*> who_to_modernize() const
+    {
+        std::vector<node*> modernizeNodes;
+        std::queue<node*> queue;
+        int level = 1;
+ 
+        queue.push(root);
+ 
+        // extra NULL is pushed to keep track
+        // of all the nodes to be pushed before
+        // level is incremented by 1
+        queue.push(nullptr);
+        while (!queue.empty()) 
+        {
+            node* temp = queue.front();
+            queue.pop();
+            if (temp == nullptr) 
+            {
+                if (queue.empty()) 
+                    break;
+ 
+                if (queue.front() != nullptr)
+                    queue.push(nullptr);
+                    
+                level += 1;
+            }
+            else {
+                if (level % 2 == 0 && temp->child != nullptr)
+                    modernizeNodes.push_back(temp);
+ 
+                if (temp->child)
+                    queue.push(temp->child);
+ 
+                if (temp->brother) 
+                {
+                    node* helper = temp->brother;
+                    while (helper)
+                    {
+                        if (level % 2 == 0 && helper->child != nullptr)
+                            modernizeNodes.push_back(helper);
+
+                        if (helper->child != nullptr)
+                            queue.push(helper->child);
+ 
+                        helper = helper->brother;
+                    }
+                }             
+            }
+        }
+        return modernizeNodes;
+    }
 public:
     Hierarchy(Hierarchy &&r) noexcept
     {
@@ -142,28 +317,22 @@ public:
 
     Hierarchy(const string &data)
     {
+        if(!checkInputData(data))
+            throw std::invalid_argument("Not valid data given!\n");
+
         string clearedData = data;
         clearedData.erase(std::remove(clearedData.begin(), clearedData.end(), ' '), clearedData.end());
-        std::stringstream ss;
-        ss << clearedData;
-        while (!ss.eof())
+        std::vector<string> lines = getLine(clearedData);
+        for (auto &&line : lines)
         {
-            string line;
-            std::getline(ss, line);
             if (line.find('-') != string::npos)
             {
-                //std::cout<<"124\n";
                 size_t pos = line.find('-');
                 string fatherName, childName;
                 fatherName = line.substr(0, pos);
-                childName = line.substr(pos + 1, 100);
-                //std::cout<<"realno e "<<fatherName << "-" <<childName<<std::endl;
-                //std::getline(ss, fatherName, '-');
-                //std::getline(ss, childName);
-
+                childName = line.substr(pos + 1, 100);             
                 if (!root && fatherName == "Uspeshnia")
                 {
-                    //std::cout<<"134\n";
                     root = new node("Uspeshnia", nullptr, root);
                     root->child = new node(childName, nullptr, root->child);
                     size += 2;
@@ -172,44 +341,18 @@ public:
 
                 if (find(fatherName))
                 {
-                    //std::cout<<"142\n";
-                    //if(fatherName == "Slavi")
-                    //    std::cout<<print();
-
                     auto father = getNode(root, fatherName);
-                    //if(!father)
-                    //{
-                    //    std::cout<<"NULLPTR\n";
-                    //    std::cout<<fatherName;
-                    //}
-                    //std::cout<<father->data<<std::endl;
-                    //std::cout<<"ALOOOOO1\n";
-                    //if(father->child)
-                    //    std::cout<<father->child->data<<std::endl;
                     node *oldChild = father->child;
-                    //std::cout<<"ALOOOOO2\n";
                     oldChild = new node(childName, nullptr, oldChild);
-                    //std::cout<<"ALOOOOO3\n";
                     father->child = oldChild;
                     size++;
-                    //std::cout<<"ALOOOOO4\n";
-                    //std::cout<<print();
-
-
-
-
-                    //std::cout<<(oldChild==nullptr)<<std::endl;
-                    //if(oldChild)
-                    //    std::cout<<oldChild->data<<std::endl;
                 }
                 else throw std::invalid_argument("No such father!\n");
             }
             else if(line != "")
             {
-                //std::cout<<"150\n";
                 throw std::invalid_argument("shablaba\n");
             }
-            //std::cout<<"ebasimamata\n";
         }
     }
 
@@ -218,7 +361,13 @@ public:
         clear(root);
     }
 
-    void operator=(const Hierarchy &) = delete;
+    void operator=(const Hierarchy &h)
+    {
+        if (&h != this) {
+            clear(root);
+            root = copy(h.root);
+        }
+    }
 
     string print() const
     {
@@ -229,6 +378,7 @@ public:
     {
         return 0;
     }
+   
     bool find(const string &name) const
     {
         return find(root, name);
@@ -239,6 +389,7 @@ public:
         //return size;
         return num_employees(root);
     }
+    
     int num_overloaded(int level = 20) const
     {
         return num_overloaded(level, root);
@@ -350,6 +501,7 @@ public:
         }
         return false;
     }
+
     bool hire(const string &who, const string &boss)
     {
         auto newBoss = getNode(root, boss);
@@ -389,18 +541,70 @@ public:
         return false;
     }
 
+    node* getNodesToStack(std::stack<node*> &s, node *r)
+    {
+        if(!r)
+            return nullptr;
+
+    }
+
     void incorporate()
     {
-        return;
+        //auto curr = root->child;
+        //std::queue<node*> nodes;
+        //nodes.push(curr);
+        //while(curr->brother)
+        //{
+        //    nodes.push(curr->brother);
+        //    curr = curr->brother;
+        //}
+        //curr = nodes.front();
+
+
+
+
+
+
+
+        //std::vector<string> visited;
+        //std::stack<node*> nodes;
+        //Hierarchy h(*this);
+        //auto curr = h.root->child;
+        //nodes.push(curr);
+        //while(curr)
+        //{
+        //    if(curr->brother)
+        //    {
+        //        nodes.push(curr->brother);
+        //        curr = curr->brother;
+        //        continue;
+        //    }
+        //    if(curr->child)
+        //    {
+        //        nodes.push(curr->child);
+        //        curr = curr->child;
+        //        continue;
+        //    }
+        //    visited.push_back(curr->data);
+        //    nodes.pop();
+        //    curr = nodes.top();
+        //    
+        //}
+
     }
+
     void modernize()
     {
-        return;
+        std::vector<node*> employees = who_to_modernize();
+        for (auto &&employee : employees)
+            fire(employee->data);
     }
 
     Hierarchy join(const Hierarchy &right) const
     {
-        return right;
+        //if(!checkJoin(right))
+
+        
     }
 
     //If you need it - add more public methods here
