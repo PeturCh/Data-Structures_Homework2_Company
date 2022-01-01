@@ -1,5 +1,4 @@
 #pragma once
-//#include <sstream>
 #include <string>
 #include <queue>
 #include <exception>
@@ -36,7 +35,7 @@ private:
         }
     }
 
-    std::vector<std::string> getLine(const std::string &s)
+    std::vector<std::string> getLine(const std::string &s) const
     {
         std::vector<std::string> result;
         std::string line;
@@ -72,7 +71,6 @@ private:
                         else if(afterSpace.find(' ') != string::npos)
                         {
                             return false;
-                            std::cout<<"majka ti deiba\n";
                         }
                         else return true;
                     }
@@ -133,6 +131,78 @@ private:
         return find(r->brother, key) || find(r->child, key);
     }
 
+    int getLevel(const node* r, const string &name) const
+    {
+        if (!r) return 0;
+        size_t level = 1;
+        std::queue<const node*> nodes;
+        nodes.push(r);
+        nodes.push(nullptr);
+        while(true)
+        {
+            const node* current = nodes.front();
+            nodes.pop();
+
+            if (!current) 
+            {
+                level++;
+                if (nodes.empty()) return level;
+                nodes.push(nullptr);
+            }
+            else 
+            {
+                if(current->data == name)
+                    return level;
+                for (const node* it = current->child; it; it = it->brother) 
+                {
+                    nodes.push(it);
+                }
+            }
+        }
+        return level;
+    }
+
+    node* getBiggerManager(const Hierarchy &h, node *manager, node *managerRight) const
+    {
+        if(managerRight->data == manager->data)
+            return managerRight;
+
+        if(getLevel(h.root, managerRight->data) < getLevel(root, manager->data))
+            return managerRight;
+        else if(getLevel(h.root, managerRight->data) > getLevel(root, manager->data))
+            return manager;
+        else if(manager->data < managerRight->data)
+            return manager;
+        else return managerRight;
+
+    }
+
+    node* highestPaid(node* curr) const 
+    {
+        node* result = curr;
+        size_t highestSalary = getSalary(curr->data);
+ 
+        node* temp = curr->brother;
+        while (temp)
+        {
+            unsigned long tempSalary = getSalary(temp->data);
+            if (tempSalary > highestSalary)
+            {
+                highestSalary = tempSalary;
+                result = temp;
+            }
+            temp = temp->brother;
+        }
+        return result;
+    }
+
+    int longest_chain(node *r) const
+    {
+        if (!r) 
+            return 0;
+        return std::max(1 + longest_chain(r->child), longest_chain(r->brother));
+    }
+
     node *getNode(node *curr, const std::string &key) const
     {
         if (!curr)
@@ -156,24 +226,57 @@ private:
         return temp ? getFather(prev, curr->brother, name) : getFather(curr, curr->child, name);
     }
 
-    string print(node *n) const
+    std::vector<string> printSorted(node * r) const
     {
-        string result;
-        if(!n)
-            return "";
-
-        auto child = n->child;
-        while(child)
+        std::vector<string> result;
+        std::vector<string> level;
+        if (!r) return result;
+        std::queue<const node*> front;
+        front.push(r);
+        front.push(nullptr);
+        for (;;) 
         {
-            result += n->data;
-            result.push_back('-');
-            result += child->data;
-            result.push_back('\n');
-            child = child->brother;
+            const node* current = front.front();
+            front.pop();
+            if (!current) 
+            {
+                for (size_t i = 0; i < level.size(); i++)
+                {
+                    for (size_t j = i + 1; j < level.size(); j++)
+                    {
+                        if(level[j] < level[i])
+                        {
+                            string temp = level[j];
+                            level[j] = level[i];
+                            level[i] = temp;
+                        }
+                    }
+                }
+                for (size_t i = 0; i < level.size(); i++)
+                {
+                    result.push_back(level[i]);
+                }
+                level.erase(level.begin(), level.end());
+                
+                if (front.empty()) return result;
+                front.push(nullptr);
+            }
+            else 
+            {
+                string line;
+                for (const node* it = current->child; it; it = it->brother) 
+                {
+                    line += current->data;
+                    line.push_back('-');
+                    line += it->data;
+                    line.push_back('\n');
+                    level.push_back(line);
+                    line = "";
+                    front.push(it);
+                }
+            }
         }
-
-        return result + print(n->brother) + print(n->child);
-
+        return result;
     }
 
     int num_employees(node *r) const
@@ -181,6 +284,43 @@ private:
         if(!r)
             return 0;
         return 1 + num_employees(r->brother) + num_employees(r->child);
+    }
+
+    std::stack<node*> nodesForInc() const
+    {
+        std::stack<node*> nodes;
+        std::queue<node*> q;
+
+        q.push(root->child);
+        while(!q.empty())
+        {
+            node* temp = q.front();
+            q.pop();
+
+            if(temp->brother)
+            {
+                node *highestPaidEmp = highestPaid(temp);
+                nodes.push(highestPaidEmp);
+            }
+
+            if(temp->child)
+                if(temp->child->brother)
+                    q.push(temp->child);
+
+            if(temp->brother)
+            {
+                node *curr = temp->brother;
+                while(curr)
+                {
+                    if(curr->child)
+                        if(curr->child->brother)
+                            q.push(curr->child);
+
+                    curr = curr->brother;
+                }   
+            }
+        }
+        return nodes;
     }
 
     int num_overloaded(int level, node *r) const
@@ -302,7 +442,9 @@ private:
         }
         return modernizeNodes;
     }
+
 public:
+
     Hierarchy(Hierarchy &&r) noexcept
     {
         std::swap(this->root, r.root);
@@ -334,7 +476,7 @@ public:
                 if (!root && fatherName == "Uspeshnia")
                 {
                     root = new node("Uspeshnia", nullptr, root);
-                    root->child = new node(childName, nullptr, root->child);
+                    root->child = new node(childName, nullptr, nullptr);
                     size += 2;
                     continue;
                 }
@@ -342,10 +484,17 @@ public:
                 if (find(fatherName))
                 {
                     auto father = getNode(root, fatherName);
-                    node *oldChild = father->child;
-                    oldChild = new node(childName, nullptr, oldChild);
-                    father->child = oldChild;
-                    size++;
+                    node *currChild = father->child;
+                    if(!currChild)
+                        father->child = new node(childName, nullptr, nullptr);
+                    else
+                    {
+                        while(currChild->brother)
+                            currChild = currChild->brother;
+
+                        currChild->brother = new node(childName, nullptr, nullptr);
+                        size++;
+                    }
                 }
                 else throw std::invalid_argument("No such father!\n");
             }
@@ -363,7 +512,8 @@ public:
 
     void operator=(const Hierarchy &h)
     {
-        if (&h != this) {
+        if (&h != this) 
+        {
             clear(root);
             root = copy(h.root);
         }
@@ -371,12 +521,18 @@ public:
 
     string print() const
     {
-        return print(root);
+        string result = "";
+        std::vector<string> lines = printSorted(root);
+        for (auto &&line : lines)
+            result += line;
+
+        return result;
+        
     }
 
     int longest_chain() const
     {
-        return 0;
+        return longest_chain(root);
     }
    
     bool find(const string &name) const
@@ -467,16 +623,13 @@ public:
             return true;
         }
 
-        else
-        {
-            if(father->child->data == who)
+        else if(father->child->data == who)
             {
                 father->child = toFire->brother;
                 auto current = toFire->brother;
                 while(current->brother)
-                {
                     current = current->brother;
-                }
+
                 current->brother = toFire->child;
                 delete toFire;
                 return true;
@@ -485,20 +638,17 @@ public:
             {
                 auto current = father->child;
                 while(current->brother->data != who)
-                {
                     current = current->brother;
-                }
+
                 current->brother = current->brother->brother;
 
                 while(current->brother)
-                {
                     current = current->brother;
-                }
+
                 current->brother = toFire->child;
                 delete toFire;
                 return true;
             }
-        }
         return false;
     }
 
@@ -550,47 +700,58 @@ public:
 
     void incorporate()
     {
-        //auto curr = root->child;
-        //std::queue<node*> nodes;
-        //nodes.push(curr);
-        //while(curr->brother)
-        //{
-        //    nodes.push(curr->brother);
-        //    curr = curr->brother;
-        //}
-        //curr = nodes.front();
+        if (root == nullptr) 
+            return;
+    
+        std::stack<node*> toBeIncorporate = nodesForInc();
 
+        while (!toBeIncorporate.empty())
+        {
+            node* curr = toBeIncorporate.top();
+            toBeIncorporate.pop();
+    
+            if (curr->child)
+            {
+                node* parent = getFather(root, root, curr->data);
+                if (parent->child->data == curr->data){
+                    node* temp = curr->child;
+                    while (temp->brother)
+                    {
+                        temp = temp->brother;
+                    }
+                    temp->brother = curr->brother;
+                    curr->brother = nullptr;
+                }
+                else {
+                    node* temp = parent->child;
+                    while (temp->brother->data != curr->data)
+                    {
+                        temp = temp->brother;
+                    }
+                    temp->brother = curr->brother;
+    
+                    if (temp->brother)
+                    {
+                        while (temp->brother)
+                        {
+                            temp = temp->brother;
+                        }
+                        temp->brother = curr->child;
+                        curr->brother = nullptr;
+                    }
+                    else 
+                        temp->brother = curr->child;
 
-
-
-
-
-
-        //std::vector<string> visited;
-        //std::stack<node*> nodes;
-        //Hierarchy h(*this);
-        //auto curr = h.root->child;
-        //nodes.push(curr);
-        //while(curr)
-        //{
-        //    if(curr->brother)
-        //    {
-        //        nodes.push(curr->brother);
-        //        curr = curr->brother;
-        //        continue;
-        //    }
-        //    if(curr->child)
-        //    {
-        //        nodes.push(curr->child);
-        //        curr = curr->child;
-        //        continue;
-        //    }
-        //    visited.push_back(curr->data);
-        //    nodes.pop();
-        //    curr = nodes.top();
-        //    
-        //}
-
+                    node* helper = parent->child;
+                    parent->child = curr;
+                    curr->child = helper;
+                }
+            }
+            else {
+                curr->child = curr->brother;
+                curr->brother = nullptr;
+            }
+        }
     }
 
     void modernize()
@@ -602,10 +763,34 @@ public:
 
     Hierarchy join(const Hierarchy &right) const
     {
-        //if(!checkJoin(right))
-
+        if(!checkJoin(right))
+             throw std::invalid_argument("Can't join!\n");
+        Hierarchy h(right);
+        if(root == right.root)
+            return h;
         
-    }
+        node *curr = nullptr;
+        std::queue<node*> q;
+        q.push(root);
+        while(!q.empty())
+        {
+            curr = q.front();
+            q.pop();
+            for(node* it = curr->child; it; it = it->brother)
+            {
+                if(h.find(it->data) && find(it->data))
+                {
+                    node* biggerManager = getBiggerManager(h, curr, h.getFather(h.root, h.root, it->data));
+                    h.hire(it->data, biggerManager->data);
+                }
+                
+                else
+                    h.hire(it->data, curr->data);
 
-    //If you need it - add more public methods here
+                q.push(it);
+            }
+
+        }
+        return h;
+    }
 };

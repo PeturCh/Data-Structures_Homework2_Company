@@ -29,6 +29,20 @@ const string loz_new =
     " MishoPetrov -  Misho       \n"
     " MishoPetrov -  Slav        \n";
 
+const string myTest1 = 
+    " Uspeshnia     -  B \n"
+    " Uspeshnia     -  C \n"
+    " C             -  D \n"
+    " C             -  F \n"
+    " D             -  Q \n";
+
+const string myTest2 =
+    " Uspeshnia     -  B \n"
+    " Uspeshnia     -  C \n"
+    " Uspeshnia     -  D \n"
+    " B             -  F \n"
+    " F             -  Q \n";
+
 
 void create(const string& str)
 {
@@ -53,7 +67,7 @@ TEST_CASE("Create and save hierarchy") {
         REQUIRE(h.find(TheBoss));
         REQUIRE(h.find("Pesho"));
 
-        //REQUIRE(h.longest_chain() == 2);
+        REQUIRE(h.longest_chain() == 2);
         REQUIRE(h.manager("Pesho") == TheBoss);
         
         REQUIRE(h.num_subordinates(TheBoss) == 1);
@@ -72,8 +86,7 @@ TEST_CASE("Create and save hierarchy") {
         REQUIRE(h.find("Misho"));
         REQUIRE(h.find("MishoPetrov"));
 
-        //std::cout<<h.print();
-        //REQUIRE(h.longest_chain() == 3);
+        REQUIRE(h.longest_chain() == 3);
         REQUIRE(h.manager("MishoPetrov") == TheBoss);
         REQUIRE(h.manager("Misho") == "MishoPetrov");
         REQUIRE(h.manager("Misho") == h.manager("Slav"));
@@ -81,7 +94,7 @@ TEST_CASE("Create and save hierarchy") {
         REQUIRE(h.num_subordinates(TheBoss) == 1);
         REQUIRE(h.num_subordinates("MishoPetrov") == 2);
 
-        //REQUIRE(h.print() == loz_print);
+        REQUIRE(h.print() == loz_print);
     }
 
     SECTION("Errors") {
@@ -104,15 +117,11 @@ TEST_CASE("Simple selectors") {
     }
 
     SECTION("Manager") {
-        //std::cout<<"dobreee\n";
+
         REQUIRE(loz.manager(TheBoss) == "");
-        //std::cout<<"opa\n";
         REQUIRE(loz.manager("Slavi") == TheBoss);
-        //std::cout<<"opa1\n";
         REQUIRE(loz.manager("Slav1") == "Slavi");
-        //std::cout<<"opa2\n";
         REQUIRE(loz.manager("Mecho") == "Slav1");
-        //std::cout<<"opa2\n";
 
     }
 
@@ -124,10 +133,10 @@ TEST_CASE("Simple selectors") {
         REQUIRE(empty.num_subordinates("NoName") < 0);
     }
 
-    /*SECTION("Longest chain") {
+    SECTION("Longest chain") {
         REQUIRE(empty.longest_chain() == 0);
         REQUIRE(loz.longest_chain() == 5);
-    }*/
+    }
     
     SECTION("Find") {
         REQUIRE(!empty.find(""));
@@ -150,11 +159,8 @@ TEST_CASE("Simple selectors") {
 
 TEST_CASE("Overloaded") {
     Hierarchy h (large);
-    //std::cout<<h.num_employees()<<std::endl;
     Hierarchy loz(lozenec);
-    //std::cout<<loz.num_employees()<<std::endl;
     Hierarchy empty("");
-    //std::cout<<empty.num_employees()<<std::endl;
 
     REQUIRE(h.num_overloaded() == 2);
     REQUIRE(loz.num_overloaded() == 0);
@@ -165,9 +171,6 @@ TEST_CASE("Overloaded") {
 TEST_CASE("Salary") {
     Hierarchy h(large);
     Hierarchy loz(lozenec);
-
-    //std::cout<<loz.print();
-    //std::cout<<h.print();
 
     REQUIRE(h.getSalary(TheBoss) == 1650);
     REQUIRE(h.getSalary("1") == 3850);
@@ -236,11 +239,10 @@ TEST_CASE("Hire") {
     REQUIRE(!loz.hire("Ico", "BadName"));
 }
 
-/*
 TEST_CASE("Incorporate") {
     Hierarchy loz(lozenec);
 
-    //CHECK(loz.longest_chain() == 5);
+    CHECK(loz.longest_chain() == 5);
     CHECK(loz.num_employees() == 13);
     CHECK(loz.num_subordinates(TheBoss) == 3);
     CHECK(loz.manager("Misho") == TheBoss);
@@ -250,14 +252,14 @@ TEST_CASE("Incorporate") {
         "Uspeshnia-Gosho\nGosho-Dancho\nGosho-Misho\nGosho-Slavi\nDancho-Boris\n"
         "Dancho-Pesho\nSlavi-Slav1\nBoris-Kamen\nPesho-Alex\nSlav1-Mecho\nSlav1-Slav2\nMecho-Q12Adl\n");
 
-    //REQUIRE(loz.longest_chain() == 6);
+    REQUIRE(loz.longest_chain() == 6);
     REQUIRE(loz.num_employees() == 13);
     REQUIRE(loz.num_subordinates(TheBoss) == 1);
     REQUIRE(loz.manager("Misho") == "Gosho");
 
 
     Hierarchy h(large);
-    //CHECK(h.longest_chain() == 4);
+    CHECK(h.longest_chain() == 4);
     CHECK(h.num_employees() == 25);
     CHECK(h.num_subordinates("3") == 9);
 
@@ -266,7 +268,7 @@ TEST_CASE("Incorporate") {
     REQUIRE(h.print() ==
         "Uspeshnia-1\n1-3\n3-2\n3-31\n3-4\n3-5\n3-6\n3-7\n2-21\n31-32\n31-33\n31-34\n31-35\n31-36\n31-37\n"
         "31-38\n31-39\n21-22\n21-23\n21-24\n21-25\n21-26\n21-27\n21-28\n");
-    //REQUIRE(h.longest_chain() == 6);
+    REQUIRE(h.longest_chain() == 6);
     REQUIRE(h.num_employees() == 25);
     REQUIRE(h.num_subordinates(TheBoss) == 1);
     REQUIRE(h.manager("3") == "1");
@@ -274,21 +276,21 @@ TEST_CASE("Incorporate") {
     REQUIRE(h.num_subordinates("21") == 7);
     REQUIRE(h.num_subordinates("3") == 6);
 }
-*/
+
 
 TEST_CASE("Modernize") {
     Hierarchy loz(lozenec);
 
-    //CHECK(loz.longest_chain() == 5);
+    CHECK(loz.longest_chain() == 5);
     CHECK(loz.num_employees() == 13);
     CHECK(loz.num_subordinates(TheBoss) == 3);
     CHECK(loz.manager("Dancho") == "Gosho");
     loz.modernize();
 
-    //REQUIRE(loz.print() == 
-    //    "Uspeshnia-Dancho\nUspeshnia-Misho\nUspeshnia-Pesho\nUspeshnia-Slav1\nUspeshnia-Slav2\nDancho-Boris\n"
-    //    "Dancho-Kamen\nPesho-Alex\nSlav1-Q12Adl\n");
-    //REQUIRE(loz.longest_chain() == 3);
+    REQUIRE(loz.print() == 
+        "Uspeshnia-Dancho\nUspeshnia-Misho\nUspeshnia-Pesho\nUspeshnia-Slav1\nUspeshnia-Slav2\nDancho-Boris\n"
+        "Dancho-Kamen\nPesho-Alex\nSlav1-Q12Adl\n");
+    REQUIRE(loz.longest_chain() == 3);
     REQUIRE(loz.num_employees() == 10);
     REQUIRE(loz.manager("Dancho") == TheBoss);
     REQUIRE(!loz.find("Gosho"));
@@ -297,40 +299,53 @@ TEST_CASE("Modernize") {
 
 
     Hierarchy h(large);
-    //CHECK(h.longest_chain() == 4);
+    CHECK(h.longest_chain() == 4);
     CHECK(h.num_employees() == 25);
     CHECK(h.num_subordinates(TheBoss) == 1);
     CHECK(h.manager("3") == "1");
     h.modernize();
-    //REQUIRE(h.print() ==
-    //    "Uspeshnia-2\nUspeshnia-3\nUspeshnia-4\nUspeshnia-5\nUspeshnia-6\nUspeshnia-7\n"
-    //    "2-21\n2-22\n2-23\n2-24\n2-25\n2-26\n2-27\n2-28\n3-31\n3-32\n3-33\n3-34\n3-35\n3-36\n3-37\n3-38\n3-39\n");
-    //REQUIRE(h.longest_chain() == 3);
+    REQUIRE(h.print() ==
+        "Uspeshnia-2\nUspeshnia-3\nUspeshnia-4\nUspeshnia-5\nUspeshnia-6\nUspeshnia-7\n"
+        "2-21\n2-22\n2-23\n2-24\n2-25\n2-26\n2-27\n2-28\n3-31\n3-32\n3-33\n3-34\n3-35\n3-36\n3-37\n3-38\n3-39\n");
+    REQUIRE(h.longest_chain() == 3);
     REQUIRE(h.num_employees() == 24);
     REQUIRE(h.num_subordinates(TheBoss) == 6);
     REQUIRE(h.manager("3") == TheBoss);
     REQUIRE(!h.find("1"));
 }
 
-/*
+
 TEST_CASE("Join") {
     Hierarchy l_new(loz_new);
     Hierarchy loz(lozenec);
     Hierarchy h(large);
+    Hierarchy myH1(myTest1);
+    Hierarchy myH2(myTest2);
+    
+    Hierarchy test = myH1.join(myH2);
+    REQUIRE(test.num_employees() == 6);
+    REQUIRE(test.longest_chain() == 3);
+    REQUIRE(test.getSalary(TheBoss) == 1600);
+    REQUIRE(test.manager("Q") == "D");
+    REQUIRE(test.manager("F") == "B");
+    REQUIRE(test.manager("B") == TheBoss);
+    REQUIRE(test.manager("C") == TheBoss);
+    REQUIRE(test.manager("D") == TheBoss);
+
 
     Hierarchy l2 = loz.join(loz);
     REQUIRE(l2.print() == loz.print());
     REQUIRE(h.print() == h.join(h).print());
 
     Hierarchy joined = l_new.join(loz);
-    REQUIRE(joined.print() ==
+    REQUIRE(joined.print() ==    
         "Uspeshnia-Gosho\nUspeshnia-Misho\nUspeshnia-MishoPetrov\nUspeshnia-Slavi\nGosho-Dancho\nGosho-Pesho"
         "\nMishoPetrov-Slav\nSlavi-Slav1\nSlavi-Slav2\nDancho-Boris\nDancho-Kamen\nPesho-Alex\nSlav1-Mecho\nMecho-Q12Adl\n");
     REQUIRE(joined.num_employees() == 15);
-    //REQUIRE(joined.longest_chain() == 5);
+    REQUIRE(joined.longest_chain() == 5);
 
     Hierarchy joined2 = h.join(loz);
     REQUIRE(joined2.num_employees() == 13 + 24);
     REQUIRE(joined2.num_subordinates(TheBoss) == 4);
     REQUIRE(joined2.num_overloaded() == 2);
-}*/
+}
