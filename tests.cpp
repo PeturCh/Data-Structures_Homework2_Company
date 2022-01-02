@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "implementation.cpp"
+#include "implementation.hpp"
 
 const string TheBoss = "Uspeshnia";
 
