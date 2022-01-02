@@ -1,5 +1,8 @@
+#pragma once
 #include <string>
 #include <queue>
+#include <stack>
+#include <algorithm>
 #include <exception>
 
 using std::string;
@@ -540,7 +543,9 @@ public:
     {
         if(name == "Uspeshnia")
             return "";
-        return getFather(root, root, name)->data;
+
+        auto manager = getFather(root, root, name);
+        return manager ? manager->data : "";
     }
 
     int num_subordinates(const string &name) const
