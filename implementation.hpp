@@ -392,17 +392,13 @@ private:
         return true;
     }
 
-    const std::vector<node*> who_to_modernize() const
+    const std::vector<node*> nodesForModernization() const
     {
         std::vector<node*> modernizeNodes;
         std::queue<node*> queue;
         int level = 1;
  
         queue.push(root);
- 
-        // extra NULL is pushed to keep track
-        // of all the nodes to be pushed before
-        // level is incremented by 1
         queue.push(nullptr);
         while (!queue.empty()) 
         {
@@ -689,12 +685,12 @@ public:
         if (root == nullptr) 
             return;
     
-        std::stack<node*> toBeIncorporate = nodesForInc();
+        std::stack<node*> forIncorporation = nodesForInc();
 
-        while (!toBeIncorporate.empty())
+        while (!forIncorporation.empty())
         {
-            node* curr = toBeIncorporate.top();
-            toBeIncorporate.pop();
+            node* curr = forIncorporation.top();
+            forIncorporation.pop();
     
             if (curr->child)
             {
@@ -742,7 +738,7 @@ public:
 
     void modernize()
     {
-        std::vector<node*> employees = who_to_modernize();
+        std::vector<node*> employees = nodesForModernization();
         for (auto &&employee : employees)
             fire(employee->data);
     }

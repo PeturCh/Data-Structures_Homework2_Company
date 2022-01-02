@@ -64,7 +64,7 @@ void getHelp()
             <<"----------------------------------------------------------------------------END---------------------------------------------------------------------------------";
 }
 
-int main()
+void run()
 {
     std::vector<Object> objects;
     string line;
@@ -73,8 +73,8 @@ int main()
     {
         std::cout<<"\n>";
         std::getline(std::cin , line);
-        command = getCommand(line); // operation called
-        string hierarchyName = getArgument(line); // name of the hierarchy
+        command = getCommand(line);
+        string hierarchyName = getArgument(line);
 
         if(command == "help")
         {
@@ -88,22 +88,20 @@ int main()
             string fileName;
             for(auto &&obj : objects)
             {
-                //check for unsaved hierarchies
                 if(obj.saved == false) 
                 {
                     std::cout <<obj.name <<" is changed, but not saved to file.";
                     std::cout << " Do you want to save it ? (y/n) " << std::endl;
-                    //ask user if he want to save unsaved hierarchies
                     do
                     {
                         std::cin >> answer;
                     } while (answer != 'y' && answer != 'n');
-                    //if user want to save hierarchies -> user enter file name
+
                     if (answer == 'y')
                     {
                         std::cout<< "Enter file name: ";
                         std::cin>>fileName;
-                        //save current hierarchy in given file
+
                         std::ofstream out(fileName);
                         string hierarchyData;
                         hierarchyData = obj.h.print();
@@ -125,7 +123,7 @@ int main()
             if(fileName.empty())
             {   
                 string consoleLine;
-                while(std::getline(std::cin, consoleLine)) // enter hierarchy until "Ctrl + D"
+                while(std::getline(std::cin, consoleLine))
                 {
                     lines += (consoleLine + '\n');
                     consoleLine = "";
@@ -500,4 +498,10 @@ int main()
         }
         
     }
+}
+
+int main()
+{
+    run();
+    return 0;
 }
