@@ -7,7 +7,6 @@ using std::string;
 class Hierarchy
 {
 private:
-    size_t size = 0;
     struct node
     {
         std::string data{};
@@ -448,13 +447,11 @@ public:
     Hierarchy(Hierarchy &&r) noexcept
     {
         std::swap(this->root, r.root);
-        std::swap(this->size, size);
     }
 
     Hierarchy(const Hierarchy &r)
     {
         root = copy(r.root);
-        size = r.size;
     }
 
     Hierarchy(const string &data)
@@ -477,14 +474,12 @@ public:
                 {
                     root = new node("Uspeshnia", nullptr, root);
                     root->child = new node(childName, nullptr, nullptr);
-                    size += 2;
                     continue;
                 }
 
-                if (find(fatherName))
+                if (auto father = getNode(root, fatherName))
                 {
-                    auto father = getNode(root, fatherName);
-                    node *currChild = father->child;
+                    auto currChild = father->child;
                     if(!currChild)
                         father->child = new node(childName, nullptr, nullptr);
                     else
@@ -493,7 +488,6 @@ public:
                             currChild = currChild->brother;
 
                         currChild->brother = new node(childName, nullptr, nullptr);
-                        size++;
                     }
                 }
                 else throw std::invalid_argument("No such father!\n");
@@ -510,14 +504,7 @@ public:
         clear(root);
     }
 
-    void operator=(const Hierarchy &h)
-    {
-        if (&h != this) 
-        {
-            clear(root);
-            root = copy(h.root);
-        }
-    }
+    void operator=(const Hierarchy &h) = delete;
 
     string print() const
     {
@@ -542,7 +529,6 @@ public:
 
     int num_employees() const
     {
-        //return size;
         return num_employees(root);
     }
     
@@ -589,13 +575,10 @@ public:
 
     unsigned long getSalary(const string &who) const
     {
-        //std::cout<<"\n--------------------------------------\n";
         auto curr = getNode(root, who);
         if(!curr)
-        {
-            //std::cout<<"what : "<< who <<std::endl;
             return -1;
-        }
+
         unsigned long salary = num_subordinates(curr) * 500;
         auto subordinate = curr->child;
         while(subordinate)
@@ -604,8 +587,6 @@ public:
                 salary += (num_employees(subordinate->child)) * 50;
             subordinate = subordinate->brother;
         }
-        //std::cout<<who<<" "<<salary<<std::endl;
-        //std::cout<<print();
         return salary;
     }
 
@@ -658,33 +639,34 @@ public:
         if(!newBoss || who == "Uspeshnia")
             return false;
 
-        if(find(who))
+        if(auto employee = getNode(root, who))
         {
-            auto employee = getNode(root, who);
             auto oldBoss = getFather(root, root, who);
 
             if(oldBoss->child->data == who)
             {
+                auto oldChild = oldBoss->child;
                 oldBoss->child = employee->brother;
-                newBoss->child = new node(employee->data, employee->child, newBoss->child);
+                oldChild->brother = newBoss->child;
+                newBoss->child = oldChild;
                 return true;
             }
             else
             {
                 auto current = oldBoss->child;
                 while(current->brother->data != who)
-                {
                     current = current->brother;
-                }
+
+                auto toMove = current->brother;
                 current->brother = current->brother->brother;
-                newBoss->child = new node(employee->data, employee->child, newBoss->child);
+                toMove->brother = newBoss->child;
+                newBoss->child = toMove;
                 return true;
             }
         }
     
         else
         {
-            auto newBoss = getNode(root, boss);
             newBoss->child = new node(who, nullptr, newBoss->child);
             return true;
         }
