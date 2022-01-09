@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <list>
 #include <queue>
 #include <stack>
 #include <algorithm>
@@ -682,57 +683,84 @@ public:
 
     void incorporate()
     {
-        if (root == nullptr) 
+        if(!root->child)
             return;
-    
-        std::stack<node*> forIncorporation = nodesForInc();
 
-        while (!forIncorporation.empty())
+        node* current = nullptr;
+        std::queue<node*> employees;
+        employees.push(root);
+        std::list<node*> toBeRaised;
+        while(!employees.empty())
         {
-            node* curr = forIncorporation.top();
-            forIncorporation.pop();
-    
-            if (curr->child)
+            current = employees.front();
+            employees.pop();
+            if(num_subordinates(current->data) >= 2)
             {
-                node* parent = getFather(root, root, curr->data);
-                if (parent->child->data == curr->data){
-                    node* temp = curr->child;
-                    while (temp->brother)
-                    {
-                        temp = temp->brother;
-                    }
-                    temp->brother = curr->brother;
-                    curr->brother = nullptr;
-                }
-                else {
-                    node* temp = parent->child;
-                    while (temp->brother->data != curr->data)
-                    {
-                        temp = temp->brother;
-                    }
-                    temp->brother = curr->brother;
-    
-                    if (temp->brother)
-                    {
-                        while (temp->brother)
-                        {
-                            temp = temp->brother;
-                        }
-                        temp->brother = curr->child;
-                        curr->brother = nullptr;
-                    }
-                    else 
-                        temp->brother = curr->child;
+                node* toAdd = highestPaid(current);
+                toBeRaised.push_front(toAdd);
+            }
+            for(node* it = current->child ; it ; it = it->brother)
+            {
+                employees.push(it);
+            }
+        }
+        node* managerToChange = nullptr;
 
-                    node* helper = parent->child;
-                    parent->child = curr;
-                    curr->child = helper;
+        for(node* it = toBeRaised.front() ; it ; it = it->brother)
+        {
+            managerToChange = getFather(root, root, it->data);
+
+            for(node* it2 = managerToChange->child; it2; )
+            {
+                if(it2->data != it->data)
+                {
+                    current = it2;
+                    it2 = it2->brother;
+
+                    auto lastChild = it->child;
+                    if(!lastChild)
+                        it->child = current;
+                    
+                    else
+                    {
+                        while(lastChild->brother)
+                            lastChild = lastChild->brother;
+                        
+                        lastChild->brother = current;
+                    }
+                    
+                    if(managerToChange->child->data == current->data)
+                    {
+                        managerToChange->child = current->brother;
+                        auto current2 = current->brother;
+                        while(current2->brother)
+                            current2 = current2->brother;
+
+                        current2->brother = current->child;
+                        delete current;
+                    }
+                    else
+                    {
+                        auto current2 = managerToChange->child;
+                        while(current2->brother->data != current2->data)
+                            current2 = current2->brother;
+
+                        current2->brother = current2->brother->brother;
+
+                        while(current2->brother)
+                            current2 = current2->brother;
+
+                        current2->brother = current->child;
+                        delete current;
+                    }
+                    
+                }
+                else
+                {
+                    it2 = it2->brother;
                 }
             }
-            else {
-                curr->child = curr->brother;
-                curr->brother = nullptr;
-            }
+
         }
     }
 
